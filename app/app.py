@@ -71,6 +71,3 @@ st.write(df_tidy)
 
 
 
-#creating a line chart
-
-#st.line_chart()'''
