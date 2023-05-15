@@ -1,18 +1,12 @@
-import streamlit as st
 import pandas as pd
-
+import streamlit as st
 import numpy as np
 
 
 st.title('Gapminder')
 st.write("Unlocking Lifetimes: Visualizing Progress in Longevity and Poverty Eradication")
 
-x = st.slider('Slope', min_value=0.01, max_value=0.10, step=0.01)
-y = st.slider('Noise', min_value=0.01, max_value=0.10, step=0.01)
 
-st.write(f"x={x} y={y}")
-values = np.cumprod(1 + np.random.normal(x, y, (100, 10)), axis=0)
-st.line_chart(values)
 
 
 #data
@@ -67,7 +61,15 @@ df_merged = load_data(file_path)
 df_tidy = preprocess_data(df_merged)
 
 # Display the processed DataFrame
-st.write(df_tidy)
 
+values = df_tidy
+'''st.line_chart(values)-->bubble chart The bubble chart should show the following KPIs:
 
+On the x-axis: the logarithmic Gross Natition Income (GNI) per captia (inflation-adjusted and converted to $ based on purchasing power parity (PPP)). The maximal x value should be constant independent what you select, so that you can more easily compare the charts.
+On the y-axis: Life expectancy
+Size of the bubble: population
+Color: Country
+# st.slider () to control the year
+# multiselect widget for selecting one or more countries
+'''
 
