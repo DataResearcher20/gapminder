@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import plotly.express as px
 
 st.title('Gapminder')
 st.write("Unlocking Lifetimes: Visualizing Progress in Longevity and Poverty Eradication")
