@@ -1,29 +1,28 @@
 import pandas as pd
 
-# Load the CSV files into DataFrames
-df_population = pd.read_csv('population.csv')
-df_life_expectancy = pd.read_csv('life_expectancy.csv')
-df_gni_per_capita = pd.read_csv('gni_per_capita.csv')
+# Define chunk size
+chunksize = 10000
 
-# Forward fill missing values in each DataFrame
-df_population_filled = df_population.fillna(method='ffill')
-df_life_expectancy_filled = df_life_expectancy.fillna(method='ffill')
-df_gni_per_capita_filled = df_gni_per_capita.fillna(method='ffill')
+# Initialize an empty DataFrame with 'country' and 'year' columns
+merged_df = pd.DataFrame(columns=['country', 'year'])
 
+# Iterate over chunks of df_population_tidy and merge with other DataFrames
+for chunk in pd.read_csv('population.csv', chunksize=chunksize):
+    df_population_filled = chunk.fillna(method='ffill')
+    df_population_tidy = pd.melt(df_population_filled, id_vars='country', var_name='year', value_name='population')
+    merged_df = pd.merge(merged_df, df_population_tidy, on=['country', 'year'], how='outer')
 
-# Select relevant columns and rename them for each DataFrame
-df_population_tidy = df_population_filled[['country', 'year', 'population']]
-df_population_tidy = df_population_tidy.rename(columns={'population': 'population'})
+# Merge df_life_expectancy_tidy
+for chunk in pd.read_csv('life_expectancy.csv', chunksize=chunksize):
+    df_life_expectancy_filled = chunk.fillna(method='ffill')
+    df_life_expectancy_tidy = pd.melt(df_life_expectancy_filled, id_vars='country', var_name='year', value_name='life_expectancy_tidy')
+    merged_df = pd.merge(merged_df, df_life_expectancy_tidy, on=['country', 'year'], how='outer')
 
-df_life_expectancy_tidy = df_life_expectancy_filled[['country', 'year', 'life_expectancy']]
-df_life_expectancy_tidy = df_life_expectancy_tidy.rename(columns={'life_expectancy': 'life_expectancy'})
+# Merge df_gni_per_capita_tidy
+for chunk in pd.read_csv('gni_per_capita.csv', chunksize=chunksize):
+    df_gni_per_capita_filled = chunk.fillna(method='ffill')
+    df_gni_per_capita_tidy = pd.melt(df_gni_per_capita_filled, id_vars='country', var_name='year', value_name='gni_per_capita_tidy')
+    merged_df = pd.merge(merged_df, df_gni_per_capita_tidy, on=['country', 'year'], how='outer')
 
-df_gni_per_capita_tidy = df_gni_per_capita_filled[['country', 'year', 'gni_per_capita']]
-df_gni_per_capita_tidy = df_gni_per_capita_tidy.rename(columns={'gni_per_capita': 'gni_per_capita'})
-
-# Merge the three DataFrames based on 'country' and 'year'
-merged_df = pd.merge(df_population_tidy, df_life_expectancy_tidy, on=['country', 'year'])
-merged_df = pd.merge(merged_df, df_gni_per_capita_tidy, on=['country', 'year'])
-
-# Display the merged DataFrame
-print(merged_df.head())
+# Save merged_df as CSV
+merged_df.to_csv('merged_data.csv', index=False)
