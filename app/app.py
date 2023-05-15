@@ -44,7 +44,7 @@ def preprocess_data(df):
     df_filled = df.fillna(method='ffill')
     
     # Transform the DataFrame into tidy format
-    df_tidy = df_filled[['country', 'year', 'life_expectancy', 'population', 'gni_per_capita']]
+    df_tidy = df_filled[['country', '1990', '1991', '1992', '1993', '1994', '1995', '1996', '1997', '1998', '1999', '2000', '2001', '2002', '2003', '2004', '2005', '2006', '2007', '2008', '2009', '2010', '2011', '2012', '2013', '2014', '2015', '2016', '2017', '2018', '2019', '2020', 'life_expectancy', 'population', 'gni_per_capita']]
     
     return df_tidy
 
