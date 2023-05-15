@@ -61,12 +61,7 @@ df_merged = load_data(file_path)
 df_tidy = preprocess_data(df_merged)
 
 # Display the processed DataFrame
-st.write(df_tidy)
 
-
-x = st.slider('Slope', min_value=0.01, max_value=0.10, step=0.01)
-y = st.slider('Noise', min_value=0.01, max_value=0.10, step=0.01)
-
-st.write(f"x={x} y={y}")
-values = np.cumprod(1 + np.random.normal(x, y, (100, 10)), axis=0)
+values = df_tidy
 st.line_chart(values)
+
