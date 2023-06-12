@@ -1,70 +1,74 @@
-import plotly.express as px
+import streamlit as st
 import pandas as pd
-from process_data import data_processing
-from joblib import Memory
+import plotly.express as px
+
 
 st.title('Gapminder')
-
 st.write("Unlocking Lifetimes: Visualizing Progress in Longevity and Poverty Eradication")
 
-# Configure the cache directory
-cache_dir = 'cache_directory'
-memory = Memory(cache_dir, verbose=0)
+# Load Data
+@st.cache_data
+def load_data():
+    # Convert M notation to float
+    def convert_to_number(x):
+        if 'B' in str(x):
+            return float(x.replace('B', '')) * 1e9
+        elif 'M' in str(x):
+            return float(x.replace('M', '')) * 1e6
+        elif 'k' in str(x):
+            return float(x.replace('k', '')) * 1e3
+        else:
+            return float(x)
 
-# Example: Display a table with the cached data
-cached_data = data_processing()
-st.table(cached_data)
-df = cached_data
+    # Load each dataset
+    df_life_exp = pd.read_csv('lex.csv')
+    df_population = pd.read_csv('pop.csv')
+    df_gni = pd.read_csv('ny_gnp_pcap_pp_cd.csv')
 
-# Year slider
-df_year_min = df['year'].min()
-df_year_max = df['year'].max()
-year = st.slider('Select Year', min_value=int(df_year_min), max_value=int(df_year_max))
+    # Transform to tidy format
+    df_life_exp = df_life_exp.melt(id_vars=['country'], var_name='year', value_name='life_expectancy')
+    df_population = df_population.melt(id_vars=['country'], var_name='year', value_name='population')
+    df_gni = df_gni.melt(id_vars=['country'], var_name='year', value_name='gni_per_capita')
 
-# Multiselect widget for selecting countries
-countries = st.multiselect('Select Countries', df['country'].unique())
+    # Forward fill missing data
+    df_life_exp = df_life_exp.sort_values(['country', 'year']).ffill()
+    df_population = df_population.sort_values(['country', 'year']).ffill()
+    df_gni = df_gni.sort_values(['country', 'year']).ffill()
 
-# Filter the dataframe based on the selected year and countries
-filtered_df = df[(df['year'] == str(year)) & (df['country'].isin(countries))]
+    # Merge into single dataframe
+    df = pd.merge(df_life_exp, df_population, on=['country', 'year'])
+    df = pd.merge(df, df_gni, on=['country', 'year'])
 
-st.write(filtered_df.head())
+    df['year'] = df['year'].astype(int)  # Ensure 'year' is integer type
+    # Ensure 'population', 'life_expectancy' and 'gni_per_capita' are float type
+    df['population'] = df['population'].apply(convert_to_number)
+    df['life_expectancy'] = df['life_expectancy'].astype(float)
+    df['gni_per_capita'] = df['gni_per_capita'].apply(convert_to_number)
 
-df_for_plot = filtered_df.copy()
+    return df
 
-multipliers = {'k': 1e3, 'M': 1e6, 'B': 1e9, 'T': 1e12}
-def convert_population(population):
-    if isinstance(population, str):
-        for suffix, multiplier in multipliers.items():
-            if population.endswith(suffix):
-                return int(float(population[:-1]) * multiplier)
-    return population
+df = load_data()
 
-df_for_plot['population'] = df_for_plot['population'].apply(convert_population)
-df_for_plot['year'] = df_for_plot['year'].astype(int)
-df_for_plot['life_expectancy'] = df_for_plot['life_expectancy'].astype(int)
+# Continue with the rest of the code as before
 
 
-st.write(df_for_plot.head())
+# Sidebar
+st.sidebar.title("Controls")
+selected_year = st.sidebar.slider("Select Year", min_value=int(df['year'].min()), max_value=int(df['year'].max()), value=int(df['year'].max()))
+selected_countries = st.sidebar.multiselect("Select Countries", options=list(df['country'].unique()))
 
-# Bubble chart
-# Check if there are selected countries
-df_life_exp_min = df['life_expectancy'].min()
-df_life_exp_max = df['life_expectancy'].max()
-if len(countries) > 0:
-    # Create bubble chart using Plotly Express
-    fig = px.scatter(df_for_plot, x='year', y='life_expectancy', size='population', hover_data=['gni_per_capita'], color='country', color_discrete_sequence=['blue'])  
+# Filter dataframe based on controls
+df_filtered = df[(df['country'].isin(selected_countries)) & (df['year'] == selected_year)]
 
-    # Customize the chart layout
-    fig.update_layout(title='Life Expectancy vs. Year',
-                      xaxis_title='Year',
-                      yaxis_title='Life Expectancy',
-                      showlegend=True,
-                      xaxis_range=[int(df_year_min), int(df_year_max)],
-                      yaxis_range=[int(df_life_exp_min),int(df_life_exp_max)]
-    )
+# Plot
+st.title(f"Life Expectancy, Population and GNI per Capita for Selected Countries in {selected_year}")
+fig = px.scatter(df_filtered,
+                 x="gni_per_capita",
+                 y="life_expectancy",
+                 size="population",
+                 color="country",
+                 log_x=True,  # Logarithmic scale for x-axis
+                 hover_name="country",
+                 size_max=60)
 
-    # Display the chart
-    st.plotly_chart(fig)
-else:
-    # Display a message if no countries are selected
-    st.write('Please select one or more countries.')
+st.plotly_chart(fig)
