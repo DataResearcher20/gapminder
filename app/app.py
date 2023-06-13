@@ -21,9 +21,9 @@ def load_data():
             return float(x)
 
     # Load each dataset
-    df_life_exp = pd.read_csv('life_expectancy.csv')
-    df_population = pd.read_csv('population.csv')
-    df_gni = pd.read_csv('gni_per_capita.csv')
+    df_life_exp = pd.read_csv('./app/life_expectancy.csv')
+    df_population = pd.read_csv('./app/population.csv')
+    df_gni = pd.read_csv('./app/gni_per_capita.csv')
 
     # Transform to tidy format
     df_life_exp = df_life_exp.melt(id_vars=['country'], var_name='year', value_name='life_expectancy')
